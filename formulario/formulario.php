@@ -1,99 +1,102 @@
-<?php
-	//Ejercicio formulario con en PHP (nombre, DNI, direccion, telefono
-	//e-mail,fecha de nacimiento)
-	include 'conexion.php';
-	echo "<h2>Formulario de presentacion</h2>";
-	echo "
-		<form action=\"formulario.php\" method=\"post\" enctype=\"multipart/form-data\">
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Formulario</title>
+	<?php include 'conexion.php'; ?>
+</head>
+<body>
+	<h2>Formulario de presentación</h2>
 
-			<label><strong>Nombre: </strong></label><br>
-			<input type=\"text\" name=\"valores[nombre]\"><br><br>
+	<form action="formulario.php" method="post" enctype="multipart/form-data">
+		<label><strong>Nombre:</strong></label><br>
+		<input type="text" name="nombre"><br><br>
 
-			<label><strong>DNI: </strong></label><br>
-			<input type=\"text\" name=\"valores[dni]\"><br><br>
+		<label><strong>DNI:</strong></label><br>
+		<input type="text" name="dni"><br><br>
 
-			<label><strong>Telefono: </strong></label><br>
-			<input type=\"number\" name=\"valores[telefono]\"><br><br>
+		<label><strong>Teléfono:</strong></label><br>
+		<input type="number" name="telefono"><br><br>
 
-			<label><strong>Direccion: </strong></label><br>
-			<input type=\"text\" name=\"valores[direccion]\"><br><br>
+		<label><strong>Dirección:</strong></label><br>
+		<input type="text" name="direccion"><br><br>
 
-			<label><strong>E-mail: </strong></label><br>
-			<input type=\"text\" name=\"valores[e-mail]\"><br><br>
+		<label><strong>E-Mail:</strong></label><br>
+		<input type="text" name="email"><br><br>
 
-			<label><strong>Fecha de nacimiento: </strong></label><br>
-			<input type=\"date\" name=\"valores[fecha de nacimiento]\"><br><br>
+		<label><strong>Fecha de nacimiento:</strong></label><br>
+		<input type="date" name="fecha"><br><br>
 
-			<input type=\"file\" name=\"foto\"><br><br>
+		<input type="file" name="foto"><br><br>
 
-			<input type=\"submit\" name=\"enviar\">
-		</form>	
-	";
+		<input type="submit" name="enviar"><br><br>
+	</form>
 
-	foreach ($_POST as $valores => $relleno) {
-		if (is_array($relleno)) {
-			foreach ($relleno as $corchete => $respuesta) {
-				if ($respuesta==null || $respuesta==' ') { 
-					/*Si el campo esta vacio o se responde con un espacio devuelve el error*/
-					echo " &nbsp;&nbsp;&nbsp;&nbsp;·El campo: <strong>$corchete</strong> no debe estar vacio.<br>";
-				}
+	<?php
+		if (isset($_POST["enviar"])) {
+
+			$nombre = $_POST["nombre"];
+			$dni = $_POST["dni"];
+			$telefono = $_POST["telefono"];
+			$direccion = $_POST["direccion"];
+			$email = $_POST["email"];
+			$fecha = $_POST["fecha"];
+			$foto = $_FILE["foto"];
+
+			$nombreImagen = $foto['name'];
+			$ruta = "imagenes/" .$nombreImagen;
+			$temporal = $foto['tmp_name'];
+			if (move_uploaded_file($temporal, $ruta)) {
+				echo "<strong>La imagen ha sido insertada correctamente</strong><br>";
 			}
-			echo "<br>";
-			if ($relleno['nombre']==is_numeric($relleno['nombre'])) {
-				/*Si el campo es numerico devuelve el siguiente error*/
-				echo " &nbsp;&nbsp;&nbsp;&nbsp;·El campo: <strong>Nombre</strong> no debe ser un numero.<br>";
-			}
-			if (strlen($relleno['dni']) != '9' || !is_numeric(substr($relleno['dni'], 0, 8)) || is_numeric(substr(trim($relleno['dni']), -1))) {
-				/*Si el campo es: distinto de 9 caracteres || los primeros 8 son numeros || el ultimo es una letra y no vale un espacio*/
-				echo " &nbsp;&nbsp;&nbsp;&nbsp;·El campo: <strong>DNI</strong> debe tener ocho numeros y una letra.<br>";
-			}
-			if (strlen($relleno['telefono']) != '9' || !is_numeric($relleno['telefono'])) {
-				/*Si el telefono tiene un numero de caracteres distinto de 9 || si esos 9 caracteres no son numeros*/
-				echo " &nbsp;&nbsp;&nbsp;&nbsp;·El campo: <strong>Telefono</strong> tiene un formato incorrecto.<br>";
-			}
-			if (filter_var($relleno['e-mail'], FILTER_VALIDATE_EMAIL) == FALSE) {
-				/*funcion que valida email*/
-				echo " &nbsp;&nbsp;&nbsp;&nbsp;·El campo: <strong>direccion de correo</strong> tiene un formato incorrecto.<br>";
-			}
-//ARREGLAR MAÑANA: ESTE ELSE SOLO ACTUA SI SE ESCRIBE MAL EL E-MAIL.
-//HAY QUE CONSEGUIR METERLO TODO EN UN IF DE MANERA QUE CON UN BOOLEANO
-//SI DEVUELVE TRUE SE EJECUTE EL ELSE Y SI DEVUELVE FALSE QUE SE EJECUTEN LOS 
-//MENSAJES DE ERROR (de manera similar a como comprueba si hay fallo en INSERT INTO)
-			else{
 
-				$nombre=$relleno['nombre'];
-				$dni=$relleno['dni'];
-				$telefono=$relleno['telefono'];
-				$direccion=$relleno['direccion'];
-				$email=$relleno['e-mail'];
-				$fecha_nacimiento=$relleno['fecha de nacimiento'];
+			if ($nombre==null || $nombre==' ' || $dni==null || $dni==' ' || $telefono==null || $telefono==' ' || $direccion==null || $direccion==' ' || $email==null || $email==' ' || $fecha==null || $fecha==' ') {
 
-				$correcto = true;
-				$formulario->beginTransaction();
-			
-				$sql = "INSERT INTO formulario (nombre,dni,telefono,direccion,email,fecha_nacimiento) values ('$nombre','$dni', '$telefono', '$direccion','$email','$fecha_nacimiento')";
-
-				if ($formulario->exec($sql) == 0) $correcto = false;
-
-				if ($correcto == true) {
-					$formulario->commit();
-					echo "<strong>Los campos se han añadido correctamente</strong><br>";
-				}
-				else{
-					$formulario->rollback();
-					echo "No se han añadido a la base de datos";
-				}
+				$errores[] = "No pueden existir campos vacios";
 			}
-		}	
-	}
-	if(isset($_POST['enviar'])){
-		$foto = $_FILES["foto"];	
-		$nombreImagen = $foto['name'];
-		$ruta = "imagenes/" .$nombreImagen;
-		$temporal = $foto["tmp_name"];
-		
-		if (move_uploaded_file($temporal,$ruta)){
-			echo "Imagen insertada<br>";
+
+			if (!preg_match("/[a-zA-Z]/", $nombre)) {
+				$errores[] = "El nombre solo puede contener letras";
+			}
+
+			if (!preg_match("/[0-9]{7,8}[a-zA-Z]/", $dni)) {
+				$errores[] = "El formato de DNI es incorrecto";
+			}
+
+			if (!preg_match("/^[9|6|7][0-9]{8}$/", $telefono)) {
+				$errores[] = "El formato de teléfono es incorrecto";
+			}
+
+			if (!preg_match("/^[A-z0-9\\._-]+@[A-z0-9][A-z0-9-]*(\\.[A-z0-9_-]+)*\\.([A-z]{2,6})$/", $email)) {
+				$errores[] = "El formato de E-Mail es incorrecto";
+			}
+
+			if (!preg_match("/^[0-9]{4}-[0-1][0-9]-[0-3][0-9]$/",$fecha)) {
+                $errores[] = "El formato de la fecha es incorrecto";
+            }
+
+            if (isset($errores)) {
+            	foreach ($errores as $error) {
+            		echo "<li>$error</li>";
+            	}
+            }
+
+            if (!isset($errores)) {
+            	$correcto = true;
+            	$formulario->beginTransaction();
+            	$sql = "INSERT INTO formulario (nombre,dni,telefono,direccion,email,fecha_nacimiento,imagen) values ('$nombre','$dni', '$telefono', '$direccion','$email','$fecha','$foto')";
+
+            	if ($formulario->exec($sql) == 0) $correcto = false;
+
+            	if ($formulario == true) {
+            		$formulario->commit();
+            		echo "<strong>Los campos se han añadido correctamente</strong>";
+            	}
+            	else{
+            		$formulario->rollback();
+            		echo "<strong>Los campos no se han añadido a la base de datos</strong>";
+            	}
+            }
 		}
-	}
-?>
+	?>
+</body>
+</html> 
